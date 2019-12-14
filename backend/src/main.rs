@@ -64,6 +64,8 @@ async fn get_next_file_path() -> Result<String, std::io::Error> {
 }
 
 use opencv::Result as CvResult;
+use std::path::Path;
+
 fn rotate(src: &opencv::prelude::Mat, angle: f64) -> CvResult<opencv::prelude::Mat> {
     let mut dst = opencv::prelude::Mat::default()?;
 
@@ -148,6 +150,34 @@ async fn read_image(data: &Vec<u8>) -> Result<(String, String), std::io::Error> 
     Ok(tokio::task::spawn_blocking(move ||scan_image(path)).await.unwrap())
 }
 
+async fn server_static_file(root: &'static Path, req: &Request<Body>) ->  Result<Response<Body>, Error>{
+    use hyper_staticfile::ResolveResult::*;
+    match hyper_staticfile::resolve(&root, &req).await.unwrap() {
+        NotFound => {
+            let res = hyper_staticfile::resolve_path(&root, "/").await.unwrap();
+            return Ok::<_, Error>(hyper_staticfile::ResponseBuilder::new()
+                .request(&req)
+                .build(res)
+                .unwrap());
+        },
+        Found(file, meta, mime) => {
+            return Ok::<_, Error>(hyper_staticfile::ResponseBuilder::new()
+                .request(&req)
+                .build(Found(file, meta, mime))
+                .unwrap())
+        },
+        _ => return Ok::<_, Error>(Response::builder()
+            .status(505)
+            .body(Body::from(""))
+            .unwrap())
+    }
+
+    return Ok::<_, Error>(hyper_staticfile::ResponseBuilder::new()
+        .request(&req)
+        .build(NotFound)
+        .unwrap())
+}
+
 #[tokio::main]
 async fn main() {
     let addr = ([127, 0, 0, 1], 9999).into();
@@ -163,11 +193,7 @@ async fn main() {
                     }
                 },
                 _path => {
-                    let res = hyper_staticfile::resolve(&root, &req).await.unwrap();
-                    return Ok::<_, Error>(hyper_staticfile::ResponseBuilder::new()
-                        .request(&req)
-                        .build(res)
-                        .unwrap())
+                    return server_static_file(root, &req).await;
                 }
             }
 
