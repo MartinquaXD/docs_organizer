@@ -122,7 +122,7 @@ fn preprocess_img(mut path: String) -> CvResult<String> {
 async fn store_img(data: &[u8]) -> Result<String, std::io::Error> {
     use tokio::fs::*;
 
-    let mut path = get_next_file_path().await?;
+    let path = get_next_file_path().await?;
 
     write(&path, data).await?;
 
@@ -152,13 +152,25 @@ async fn read_image(data: &Vec<u8>) -> Result<(String, String), std::io::Error> 
 async fn main() {
     let addr = ([127, 0, 0, 1], 9999).into();
 
+    let root = std::path::Path::new("/home/martinbeckmann/Documents/G/docs_organizer/frontend/public/");
+
     let service = make_service_fn(async move |_| {
         Ok::<_, Error>(service_fn(async move |req: Request<Body>| {
-            if req.uri() == "/uploadImage" {
-                if let Some(content) = handle_image_upload(req).await{
-                    return Ok::<_, Error>(Response::new(Body::from(content)));
+            match req.uri().path(){
+                "/uploadImage" => {
+                    if let Some(content) = handle_image_upload(req).await{
+                        return Ok::<_, Error>(Response::new(Body::from(content)));
+                    }
+                },
+                _path => {
+                    let res = hyper_staticfile::resolve(&root, &req).await.unwrap();
+                    return Ok::<_, Error>(hyper_staticfile::ResponseBuilder::new()
+                        .request(&req)
+                        .build(res)
+                        .unwrap())
                 }
             }
+
 
             Ok::<_, Error>(Response::builder()
                 .status(505)

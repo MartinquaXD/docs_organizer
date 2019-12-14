@@ -1,0 +1,40 @@
+{
+  "name": "docs_organizer",
+  "version": "1.0.0",
+  "dependencies": {
+    "typescript": "*",
+    "@types/react-dom": "*",
+    "@types/react-redux": "*",
+    "@types/react-router": "*",
+    "@types/react-router-dom": "*",
+    "@types/react-router-redux": "*",
+    "@types/redux-actions": "*",
+    "awesome-typescript-loader": "*",
+    "css-loader": "*",
+    "connected-react-router": "*",
+    "react": "*",
+    "react-dom": "*",
+    "react-redux": "*",
+    "react-router": "*",
+    "react-router-dom": "*",
+    "react-router-redux": "next",
+    "redux": "*",
+    "redux-actions": "*",
+    "redux-thunk": "*",
+    "reselect": "*",
+    "sass-loader": "*",
+    "source-map-loader": "*",
+    "style-loader": "*",
+    "typescript-fsa": "*",
+    "typescript-fsa-reducers": "*",
+    "url-loader": "*",
+    "webpack": "*",
+    "recompose": "*",
+    "fork-ts-checker-webpack-plugin": "*",
+    "ts-loader": "*"
+  },
+  "scripts": {
+    "build source dev": "node ./build.js",
+    "reinstall package.json": "rm -r -f ./node_modules && rm ./package-lock.json && npm install"
+  }
+}
