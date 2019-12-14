@@ -32,7 +32,8 @@
     "recompose": "*",
     "fork-ts-checker-webpack-plugin": "*",
     "ts-loader": "*",
-    "node-sass": "*"
+    "node-sass": "*",
+    "cbor-js": "*"
   },
   "scripts": {
     "build source dev": "node ./build.js",

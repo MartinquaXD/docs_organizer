@@ -65,6 +65,7 @@ async fn get_next_file_path() -> Result<String, std::io::Error> {
 
 use opencv::Result as CvResult;
 use std::path::Path;
+use serde_cbor::Value;
 
 fn rotate(src: &opencv::prelude::Mat, angle: f64) -> CvResult<opencv::prelude::Mat> {
     let mut dst = opencv::prelude::Mat::default()?;
@@ -129,28 +130,41 @@ async fn store_img(data: &[u8]) -> Result<String, std::io::Error> {
     write(&path, data).await?;
 
     let fp = path.clone();
-    let file_path = tokio::task::spawn_blocking(move ||preprocess_img(fp)).await.unwrap();
+    let file_path = tokio::task::spawn_blocking(move || preprocess_img(fp)).await.unwrap();
     remove_file(&path).await?;
 
     file_path.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, format!("image processing failed: {:#?}", e)))
 }
 
 async fn handle_image_upload(req: Request<Body>) -> Option<String> {
+    use serde_cbor::{from_slice, Value::*};
+
     let body = read_body(req).await.ok()?;
-    let (content, directory) = read_image(&body).await.ok()?;
-    index_document(Document {
-        content: content.clone(),
-        directory,
-    });
-    Some(content)
+    let mut body: Value = serde_cbor::from_slice(body.as_slice()).unwrap();
+
+    if let Map(mut data) = body {
+        let img_data = data.remove(&Text("fileData".to_string()))?;
+
+        if let (Bytes(data)) = img_data {
+            let (content, directory) = read_image(&data).await.ok()?;
+            index_document(Document {
+                content: content.clone(),
+                directory,
+            });
+
+            return Some(content);
+        }
+    }
+
+    None
 }
 
 async fn read_image(data: &Vec<u8>) -> Result<(String, String), std::io::Error> {
     let path = store_img(&data).await?;
-    Ok(tokio::task::spawn_blocking(move ||scan_image(path)).await.unwrap())
+    Ok(tokio::task::spawn_blocking(move || scan_image(path)).await.unwrap())
 }
 
-async fn server_static_file(root: &'static Path, req: &Request<Body>) ->  Result<Response<Body>, Error>{
+async fn server_static_file(root: &'static Path, req: &Request<Body>) -> Result<Response<Body>, Error> {
     use hyper_staticfile::ResolveResult::*;
     match hyper_staticfile::resolve(&root, &req).await.unwrap() {
         NotFound => {
@@ -159,13 +173,13 @@ async fn server_static_file(root: &'static Path, req: &Request<Body>) ->  Result
                 .request(&req)
                 .build(res)
                 .unwrap());
-        },
+        }
         Found(file, meta, mime) => {
             return Ok::<_, Error>(hyper_staticfile::ResponseBuilder::new()
                 .request(&req)
                 .build(Found(file, meta, mime))
-                .unwrap())
-        },
+                .unwrap());
+        }
         _ => return Ok::<_, Error>(Response::builder()
             .status(505)
             .body(Body::from(""))
@@ -175,7 +189,7 @@ async fn server_static_file(root: &'static Path, req: &Request<Body>) ->  Result
     return Ok::<_, Error>(hyper_staticfile::ResponseBuilder::new()
         .request(&req)
         .build(NotFound)
-        .unwrap())
+        .unwrap());
 }
 
 #[tokio::main]
@@ -186,12 +200,14 @@ async fn main() {
 
     let service = make_service_fn(async move |_| {
         Ok::<_, Error>(service_fn(async move |req: Request<Body>| {
-            match req.uri().path(){
+
+            match req.uri().path() {
                 "/uploadImage" => {
-                    if let Some(content) = handle_image_upload(req).await{
+                    println!("1");
+                    if let Some(content) = handle_image_upload(req).await {
                         return Ok::<_, Error>(Response::new(Body::from(content)));
                     }
-                },
+                }
                 _path => {
                     return server_static_file(root, &req).await;
                 }
