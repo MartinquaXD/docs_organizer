@@ -2,14 +2,22 @@ import * as React from "react"
 import "./style.scss"
 import {ChangeEvent} from "react";
 import * as CBOR from "cbor-js";
+import * as actions from "./actions"
 
 export interface UploadProps {
+    isLoading: boolean,
+    scannedText: string,
+
+    setLoaderState: typeof actions.setLoaderState,
+    setScannedText: typeof actions.setScannedText,
 
 }
 
 export class Upload extends React.Component<UploadProps> {
 
     handleUpload = (evt: ChangeEvent<HTMLInputElement>) => {
+        const {setLoaderState, setScannedText} = this.props
+        setLoaderState(true)
         const file = evt.target.files[0];
 
         const reader = new FileReader();
@@ -25,7 +33,6 @@ export class Upload extends React.Component<UploadProps> {
         reader.onload = async function (blob) {
             sendData.fileData = new Uint8Array(blob.target.result as ArrayBuffer)
 
-            console.log("file", sendData)
             let res = await fetch("/uploadImage", {
                 method: "POST",
                 headers: {
@@ -35,17 +42,25 @@ export class Upload extends React.Component<UploadProps> {
             });
 
             let txt = await res.text();
-            console.log("resp", txt)
+
+            setScannedText(txt)
+            setLoaderState(false)
         }
 
         reader.readAsArrayBuffer(file);
     }
 
     render() {
-        return <div className="upload">
-            <input type="file" id={"upload"} onChange={this.handleUpload}
-            />
-            upload
-        </div>
+        const {scannedText, isLoading} = this.props
+
+        if (isLoading) {
+            return <div>loading</div>
+        } else {
+            return <div className="upload">
+                <input type="file" id={"upload"} onChange={this.handleUpload}/>
+                <div className="text">{scannedText}</div>
+            </div>
+        }
+
     }
 }

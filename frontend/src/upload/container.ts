@@ -13,7 +13,11 @@ export interface UploadContainerProps extends RouteComponentProps<{ subjectId: s
 
 
 const mapStateToProps = (state: State, ownProps: UploadContainerProps) => {
+    const {upload} = state
+
     return {
+        isLoading: upload.isLoading,
+        scannedText: upload.scannedText
     }
 }
 

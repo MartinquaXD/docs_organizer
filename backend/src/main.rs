@@ -203,7 +203,6 @@ async fn main() {
 
             match req.uri().path() {
                 "/uploadImage" => {
-                    println!("1");
                     if let Some(content) = handle_image_upload(req).await {
                         return Ok::<_, Error>(Response::new(Body::from(content)));
                     }

@@ -5,6 +5,7 @@ import {State} from "../reducer";
 
 const actionCreator = actionCreatorFactory();
 export const setLoaderState = actionCreator<boolean>("SET_LOADER_STATE");
+export const setScannedText = actionCreator<string>("SET_SCANNED_TEXT");
 
 
 export const uploadImage = (): ThunkAction<Promise<any>, State, ThunkExtraArgs, any> => {
