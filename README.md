@@ -1,4 +1,4 @@
-#Purpose
+# Purpose
 ## Basic Idea
 This tool will someday organize all your documents in a convenient manner.
 
@@ -14,8 +14,8 @@ After the text recognition is accurate enough there should be many ways to analy
 
 This tool could analyze receipts and help with bookkeeping by creating simple graphs and tables.
 
-#Tech
-##Server
+# Tech
+## Server
 The server will be written in rust and use tokio to handle many connected clients concurrently. 
 
 To allow a responsive, low overhead connection clients will communicate via websockets and a binary protocol like CBOR 
@@ -25,11 +25,11 @@ Images will be preprocessed with opencv to boost the accuracy of the character r
 
 The text search will be provided by an Elasticsearch database.
 
-##Frontend (Website)
+## Frontend (Website)
 The web frontend will be written in Typescript and uses the usual React/Redux stack. Webpack will probably used as the 
 bundler. 
 
 I am very interested to explore use cases for WebAssembly compiled from Rust.
 
-##Future
+## Future
 If this project is popular enough there could be a Android and iOS app.
